@@ -6,6 +6,7 @@ const { User } = require("../models/user");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const JWT_SECRET = process.env.JWT_SECRET;
+const { Account } = require("../models/account");
 
 const signupBody = zod.object({
   username: zod.string().email(),
@@ -39,6 +40,11 @@ router.post("/signup", async (req, res) => {
     lastName: req.body.lastName,
   });
   const userId = user._id;
+
+  await Account.create({
+    userId,
+    balance: 1 + Math.random() * 10000,
+  });
 
   const token = jwt.sign(
     {
@@ -105,7 +111,6 @@ router.put("/", authMiddleware, async (req, res) => {
   }
 
   await User.updateOne({ _id: req.userId }, req.body);
-  console.log(111);
   res.json({
     message: "Updated successfully",
   });
