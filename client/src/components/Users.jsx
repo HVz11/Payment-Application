@@ -1,76 +1,89 @@
 import { useEffect, useState } from "react";
+import { Button } from "./Button";
 import axios from "axios";
-import _ from "lodash";
+import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 
-import { API_PATH, BACKEND_URL } from "../../config";
-import { Button } from "./Button";
-
-
 export const Users = () => {
+  const [users, setUsers] = useState([]);
+  const [filter, setFilter] = useState("");
 
-    const [users, setUser] = useState([]);
-    const [filter, setFilter] = useState("");
-    const currentUser = localStorage.getItem("username").toLocaleLowerCase();
-    
-    const debouncedFetchUsers = _.debounce(async (filter) => {
-        const response = await axios.get(`${BACKEND_URL}/${API_PATH}/user/bulk?filter=` + filter);
-        const users = response.data.user;
-        const newUsers = await users.filter((user) => {
-            return user.username.toLowerCase() !== currentUser.toLowerCase();
-          });
-        newUsers.sort();
-        setUser(newUsers);
-    },400);
+  useEffect(() => {
+    axios.get("http://localhost:3000/api/v1/user/bulk?filter=" + filter)
+      .then(response => {
+        setUsers(response.data.user);
+      });
+  }, [filter]);
 
-    useEffect(() => {
-        debouncedFetchUsers(filter);
-        return () => debouncedFetchUsers.cancel();
-    }, [filter, setFilter])
-
-
-    return (
-        <>
-            <div className="font-bold mt-6 text-lg">
-                Users
-            </div>
-            <div className="my-2">
-                <input onChange={(e) => {
-                    setFilter(e.target.value);
-                }}
-                    type="text" placeholder="Search users..." className="w-full px-2 py-1 border rounded border-slate-200"></input>
-            </div>
-            <div>
-                {users.map((user, index) => <User user={user} key={index} />)}
-            </div>
-        </>
-    );
-}
+  return (
+    <>
+      <div className="font-bold mt-6 text-lg">
+        Users
+      </div>
+      <div className="my-2">
+        <input
+          onChange={(e) => {
+            setFilter(e.target.value);
+          }}
+          type="text"
+          placeholder="Search users..."
+          className="w-full px-2 py-1 border rounded border-slate-200"
+        />
+      </div>
+      <div>
+        {users.map(user => (
+          <div key={user._id} className="flex">
+            <User user={user} />
+            <SendMoneyButton user={user} />
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};
 
 function User({ user }) {
-
-    const navigate = useNavigate();
-
-    return <div className="flex justify-between">
-        <div className="flex">
-            <div className="rounded-full h-12 w-12 bg-slate-200 flex justify-center mt-1 mr-2">
-                <div className="flex flex-col justify-center h-full text-xl">
-                    {user.firstName[0]}
-                </div>
-            </div>
-            <div className="flex flex-col justify-center h-ful">
-                <div>
-                    {user.firstName} {user.lastName}
-                </div>
-            </div>
+  return (
+    <div className="flex">
+      <div className="rounded-full h-12 w-12 bg-slate-200 flex justify-center mt-1 mr-2">
+        <div className="flex flex-col justify-center h-full text-xl">
+          {user.firstName[0]}
         </div>
-
-        <div className="flex flex-col justify-center h-ful">
-            <Button onClick={() => {
-                navigate(`/send?id=${user._id}&firstName=${user.firstName}&lastName=${user.lastName}`)
-            }}
-            label={"Send Money"} />
+      </div>
+      <div className="flex flex-col justify-center h-ful">
+        <div>
+          {user.firstName} {user.lastName}
         </div>
+      </div>
     </div>
+  );
 }
 
+User.propTypes = {
+  user: PropTypes.shape({
+    firstName: PropTypes.string.isRequired,
+    lastName: PropTypes.string.isRequired,
+  }).isRequired,
+};
+
+
+function SendMoneyButton({ user }) {
+  const navigate = useNavigate(); // useNavigate is used inside the functional component
+  return (
+    <div className="flex flex-col justify-center h-ful">
+      <Button
+        onClick={() => {
+          navigate(`/send?id=${user._id}&name=${user.firstName}`);
+        }}
+        label="Send Money"
+      />
+    </div>
+  );
+}
+
+SendMoneyButton.propTypes = {
+  user: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    firstName: PropTypes.string.isRequired,
+  }).isRequired,
+};

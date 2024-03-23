@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 export const Balance = ({ value }) => {
     return <div className="flex">
         <div className="font-bold text-lg">
@@ -8,3 +10,7 @@ export const Balance = ({ value }) => {
         </div>
     </div>
 }
+
+Balance.propTypes = {
+    value: PropTypes.number.isRequired
+};
